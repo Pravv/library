@@ -2,7 +2,6 @@ const {protocol, sysmsg} = require('tera-data-parser');
 const path = require('path');
 const fs = require('fs');
 const Long = require("long");
-const Command = require('command');
 
 class SkillClasserino{
     constructor(id, usingMask=true, bossSkill=false) {
@@ -81,10 +80,12 @@ class Library{
     }
 
     getDirectionTo(fromPos, toPos) {
+        console.warn(`DeprecationWarning: Library.getDirectionTo is deprecated. Use "Angle" equivalents instead.\n    at ${Error().stack.split('\n')[3].slice(7)}`);
         return Math.atan2(toPos.y - fromPos.y, toPos.x - fromPos.x) * 0x8000 / Math.PI;
     }
 
     opositeDirection(direction) {
+        console.warn(`DeprecationWarning: Library.opositeDirection is deprecated. Use "Angle" equivalents instead.\n    at ${Error().stack.split('\n')[3].slice(7)}`);
         return (direction + 2 * 32768) % (2 * 32768) - 32768;
     }
 
@@ -93,10 +94,12 @@ class Library{
     }
 
     emptyLong(bool=true) {
+        console.warn(`DeprecationWarning: Library.emptyLong is deprecated. Use BigInt equivalents instead.\n    at ${Error().stack.split('\n')[3].slice(7)}`);
         return new Long(0, 0, bool);
     }
 
     long(low=0, high=0, unsigned=true) {
+        console.warn(`DeprecationWarning: Library.long is deprecated. Use BigInt equivalents instead.\n    at ${Error().stack.split('\n')[3].slice(7)}`);
         return new Long(low, high, unsigned);
     }
 
@@ -212,16 +215,16 @@ class Library{
     constructor(dispatch) {
         this.dispatch = dispatch;
         dispatch.hook('C_CHECK_VERSION', 1, {order: 100, filter: {fake: null}},()=> {
-            this.version = dispatch.base.protocolVersion;
-            this.protocolVersion = dispatch.base.protocolVersion;
+            this.version = dispatch.protocolVersion;
+            this.protocolVersion = dispatch.protocolVersion;
             this.sysmsgMap = sysmsg.maps.get(this.protocolVersion);
         });
         try {
-            this.version = dispatch.base.protocolVersion;
-            this.protocolVersion = dispatch.base.protocolVersion;
+            this.version = dispatch.protocolVersion;
+            this.protocolVersion = dispatch.protocolVersion;
             this.sysmsgMap = sysmsg.maps.get(this.protocolVersion);
         }catch(e) {}
-        this.command = Command(dispatch);
+        this.command = dispatch.command;
 
         this.sp = false;
         for(let x of ['skill-prediction', 'skill-prediction-master', 'sp', 'sp-master']) {

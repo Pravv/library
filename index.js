@@ -1,4 +1,3 @@
-const Command = require('command');
 const LOAD_MODULES = ['entity', 'player', 'effect'];
 const PRE_LOAD_MODULES = ['library'];
 
@@ -6,7 +5,7 @@ class Library{
 	constructor(dispatch, arg1) {
 
         this.mods = {};
-		this.command = Command(dispatch);
+		this.command = dispatch.command;
 		this.cmd = this.command;
 
 		for(let name of PRE_LOAD_MODULES) {
@@ -36,17 +35,14 @@ class Library{
 		}
 
 		// don't mind this tbh
-		if(arg1 || dispatch.base.majorPatchVersion) loadAllModules.call(this);
+		if(arg1 || dispatch.majorPatchVersion) loadAllModules.call(this);
 		else dispatch.hook('C_LOGIN_ARBITER', 'raw', loadAllModules.bind(this));
 	}
 }
 
-let map = new WeakMap();
-
 module.exports = function Require(dispatch, ...args) {
-	if(map.has(dispatch.base)) return map.get(dispatch.base);
+	if(dispatch.name !== 'library')
+		throw error(`Tried to require library module: ${dispatch.name}`);
 
-	let library = new Library(dispatch, ...args);
-	map.set(dispatch.base, library);
-	return library;
+	return new Library(dispatch, ...args);
 }

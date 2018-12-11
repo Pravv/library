@@ -26,13 +26,7 @@ class player{
 
         // Functions
         this.isMe = (arg) => {
-            return arg.equals(this.gameId);
-            try {
-                return arg.equals(this.gameId);
-            }catch(e) {
-                console.log(`[Error] library.player.gameId = ${this.gameId} | arg = ${arg}`);
-                return false;
-            }
+            return arg == this.gameId;
         }
 
         // Login
@@ -79,7 +73,7 @@ class player{
             this.iceEdge = e.iceEdge;
             this.lightningEdge = e.lightningEdge;
         }
-        dispatch.hook('S_PLAYER_STAT_UPDATE', dispatch.base.majorPatchVersion < 75 ? 9 : 10, DEFAULT_HOOK_SETTINGS, this.sPlayerStatUpdate);
+        dispatch.hook('S_PLAYER_STAT_UPDATE', dispatch.majorPatchVersion < 75 ? 9 : 10, DEFAULT_HOOK_SETTINGS, this.sPlayerStatUpdate);
 
         // Channel/zone information
         dispatch.hook('S_CURRENT_CHANNEL', 2, e=> {
@@ -109,7 +103,7 @@ class player{
         // Party
         this.sPartyMemberList = (e) => {
             this.playersInParty = [];
-
+			
 			for(let member of e.members){
 				// If the member isn't me, we can add him/her/helicopter. Let's not assume genders here
 				if(!this.isMe(member.gameId)) this.playersInParty.push(member.gameId.toString());
@@ -137,7 +131,10 @@ class player{
         dispatch.hook('S_CREATURE_LIFE', 2, DEFAULT_HOOK_SETTINGS, this.sCreatureLife);
 
         // Inventory
-        this.sInven = e => {
+        this.sInven = (opcode, payload, incoming, fake) => {
+            const e = mods.library.getEvent(opcode, 16, payload);
+
+
             inventoryBuffer = e.first ? e.items : inventoryBuffer.concat(e.items);
             this.gold = e.gold;
 
@@ -149,7 +146,7 @@ class player{
                 for(let item of inventoryBuffer) {
                     if(!this.inven.items[item.id]) this.inven.items[item.id] = [];
                     this.inven.items[item.id].push({ amount: item.amount, dbid: item.dbid, slot: item.slot });
-
+                    
                     switch(item.slot) {
                         case 1:
                             this.inven.weapon = true;
@@ -173,7 +170,7 @@ class player{
                 inventoryBuffer = [];
             }
         }
-        dispatch.hook('S_INVEN', 16, DEFAULT_HOOK_SETTINGS, this.sInven);
+        dispatch.hook('S_INVEN', 'raw', DEFAULT_HOOK_SETTINGS, this.sInven);
 
         // Pegasus
         dispatch.hook('S_USER_STATUS', 2, e=> {
@@ -187,7 +184,7 @@ class player{
 
         // Player location
         this.handleMovement = (serverPacket, e) => {
-            if(e.type !== 7 && serverPacket?e.gameId.equals(this.gameId):true) {
+            if(e.type !== 7 && serverPacket ? e.gameId == this.gameId : true) {
                 let loc = e.loc;
                 loc.w = e.w || this.loc.w;
                 loc.updated = Date.now();
@@ -196,20 +193,20 @@ class player{
                 this.pos = loc;
             }
         }
-
-        dispatch.hook('S_ACTION_STAGE', dispatch.base.majorPatchVersion < 74 ? 6 : dispatch.base.majorPatchVersion < 75 ? 7 : 8, {filter: {fake: null}, order: 10000}, this.handleMovement.bind(null, true));
-        dispatch.hook('S_ACTION_END', dispatch.base.majorPatchVersion < 74 ? 4 : 5, {filter: {fake: null}, order: 10000}, this.handleMovement.bind(null, true));
+        
+        dispatch.hook('S_ACTION_STAGE', 8, {filter: {fake: null}, order: 10000}, this.handleMovement.bind(null, true));
+        dispatch.hook('S_ACTION_END', 5, {filter: {fake: null}, order: 10000}, this.handleMovement.bind(null, true));
         dispatch.hook('C_PLAYER_LOCATION', 5, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
         // Notify location in action
-        dispatch.hook('C_NOTIFY_LOCATION_IN_ACTION', dispatch.base.majorPatchVersion < 74 ? 3:4, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
-        dispatch.hook('C_NOTIFY_LOCATION_IN_DASH', dispatch.base.majorPatchVersion < 74 ? 3:4, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
+        dispatch.hook('C_NOTIFY_LOCATION_IN_ACTION', 4, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
+        dispatch.hook('C_NOTIFY_LOCATION_IN_DASH', 4, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
         // skills
-        dispatch.hook('C_START_SKILL', dispatch.base.majorPatchVersion < 74 ? 6:7, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
-        dispatch.hook('C_START_TARGETED_SKILL', dispatch.base.majorPatchVersion < 74 ? 5:6, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
-        dispatch.hook('C_START_COMBO_INSTANT_SKILL', dispatch.base.majorPatchVersion < 74 ? 3:4, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
-        dispatch.hook('C_START_INSTANCE_SKILL', dispatch.base.majorPatchVersion < 74 ? 4:5, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
-        dispatch.hook('C_START_INSTANCE_SKILL_EX', dispatch.base.majorPatchVersion < 74 ? 4:5, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
-        dispatch.hook('C_PRESS_SKILL', dispatch.base.majorPatchVersion < 74 ? 3:4, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
+        dispatch.hook('C_START_SKILL', 7, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
+        dispatch.hook('C_START_TARGETED_SKILL', 6, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
+        dispatch.hook('C_START_COMBO_INSTANT_SKILL', 4, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
+        dispatch.hook('C_START_INSTANCE_SKILL', 5, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
+        dispatch.hook('C_START_INSTANCE_SKILL_EX', 5, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
+        dispatch.hook('C_PRESS_SKILL', 4, {filter: {fake: null}, order: -10000}, this.handleMovement.bind(null, false));
     }
 }
 
